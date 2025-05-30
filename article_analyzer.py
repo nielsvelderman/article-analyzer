@@ -5,7 +5,7 @@ from autogen import AssistantAgent, UserProxyAgent
 # Load OpenAI API key securely
 os.environ["OPENAI_API_KEY"] = st.secrets["openai_key"]
 
-# Hashtag options per category (your existing dictionary)
+# Hashtag options per category
 hashtags = {
     "PCI": [
         "#BusinessNews", "#naturalskincare", "#Partnership", "#naturalcosmetics", "#personalcare",
@@ -62,7 +62,7 @@ hashtags = {
     ]
 }
 
-# Define the assistant agent (disable Docker if needed)
+# Define the assistant agent (disable Docker)
 assistant = AssistantAgent(
     name="analyzer_agent",
     system_message="""
@@ -74,8 +74,12 @@ Return the result as JSON with the keys: people, companies, hashtags.
     code_execution_config={"use_docker": False}  # Disable Docker here
 )
 
-# Define the user proxy agent
-user_proxy = UserProxyAgent(name="user_proxy", human_input_mode="NEVER")
+# Define the user proxy agent (also disable Docker)
+user_proxy = UserProxyAgent(
+    name="user_proxy",
+    human_input_mode="NEVER",
+    code_execution_config={"use_docker": False}  # Disable Docker here too
+)
 
 # Streamlit UI
 st.title("📰 Article Analyzer")

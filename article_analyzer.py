@@ -1,8 +1,8 @@
 import streamlit as st
-from autogen import AssistantAgent
 import os
+from autogen import AssistantAgent, UserProxyAgent
 
-# Set your OpenAI API key using Streamlit secrets
+# Load OpenAI API key securely from Streamlit secrets
 os.environ["OPENAI_API_KEY"] = st.secrets["openai_key"]
 
 # Hashtag options per category
@@ -62,35 +62,41 @@ hashtags = {
     ]
 }
 
-# Define assistant behavior
-agent = AssistantAgent(
-    name="analyzer_agent",
-    system_message="""
-You are an assistant that:
-1. Extracts all mentioned people and companies from the article.
-2. Selects 3–5 of the most relevant hashtags from the given list based on the article category.
-Return the result as JSON with the keys: people, companies, hashtags.
-"""
-)
-
 # Streamlit UI
-st.title("📰 Article Analyzer")
+st.title("📰 Article Analyzer with AutoGen")
 
-article = st.text_area("Paste the article text here")
-category = st.selectbox("Select the article category", ["PCI", "NI", "PI", "FIF"])
+article = st.text_area("Paste your article here:")
+category = st.selectbox("Select the article category:", list(hashtags.keys()))
 
-if st.button("Analyze") and article:
-    tag_list = hashtags.get(category, [])
-    user_message = f"""
-Category: {category}
-Available hashtags: {', '.join(tag_list)}
+# Analyze button logic
+if st.button("Analyze"):
+    if not article.strip():
+        st.warning("Please paste an article first.")
+    else:
+        selected_hashtags = ", ".join(hashtags[category])
 
-Article:
-\"\"\"{article}\"\"\"
-"""
-    with st.spinner("Analyzing..."):
-        result = agent.initiate_chat(
-            messages=[{"role": "user", "content": user_message}]
-        )
+        # Build the prompt
+        user_message = f"""
+        Analyze the following news article. Extract and list all people and companies mentioned.
+        Then, from the following hashtag options for the {category} category, suggest the most suitable 3–5 hashtags.
+
+        Hashtag options: {selected_hashtags}
+
+        Article:
+        \"\"\"{article}\"\"\"
+        """
+
+        # Set up AutoGen agents
+        user_proxy = UserProxyAgent(name="user_proxy", human_input_mode="NEVER")
+        assistant = AssistantAgent(name="assistant")
+
+        # Run the analysis
+        with st.spinner("Analyzing..."):
+            result = user_proxy.initiate_chat(
+                recipient=assistant,
+                messages=[{"role": "user", "content": user_message}]
+            )
+
+        # Display results
         st.subheader("🔍 Extracted Information")
         st.json(result)

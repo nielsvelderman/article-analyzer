@@ -81,7 +81,7 @@ category = st.selectbox("Select the article category", ["PCI", "NI", "PI", "FIF"
 
 if st.button("Analyze") and article:
     tag_list = hashtags.get(category, [])
-    message = f"""
+    user_message = f"""
 Category: {category}
 Available hashtags: {', '.join(tag_list)}
 
@@ -89,6 +89,8 @@ Article:
 \"\"\"{article}\"\"\"
 """
     with st.spinner("Analyzing..."):
-        result = agent.initiate_chat(message=message)
+        result = agent.initiate_chat(
+            messages=[{"role": "user", "content": user_message}]
+        )
         st.subheader("🔍 Extracted Information")
         st.json(result)

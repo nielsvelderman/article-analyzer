@@ -1,7 +1,6 @@
 import streamlit as st
 import os
 from autogen import AssistantAgent, UserProxyAgent
-from autogen.llm import OpenAI
 
 # Load OpenAI API key securely
 os.environ["OPENAI_API_KEY"] = st.secrets["openai_key"]
@@ -63,27 +62,23 @@ hashtags = {
     ]
 }
 
-# Create the LLM specifying the faster model (GPT-3.5-turbo)
-llm = OpenAI(model="gpt-3.5-turbo")
-
 # Define the assistant agent (disable Docker)
 assistant = AssistantAgent(
     name="analyzer_agent",
-    llm=llm,
     system_message="""
 You are an assistant that:
 1. Extracts all mentioned people and companies from the article.
 2. Selects 3–5 of the most relevant hashtags from the given list based on the article category.
 Return the result as JSON with the keys: people, companies, hashtags.
 """,
-    code_execution_config={"use_docker": False}
+    code_execution_config={"use_docker": False}  # Disable Docker here
 )
 
-# Define the user proxy agent (disable Docker)
+# Define the user proxy agent (also disable Docker)
 user_proxy = UserProxyAgent(
     name="user_proxy",
     human_input_mode="NEVER",
-    code_execution_config={"use_docker": False}
+    code_execution_config={"use_docker": False}  # Disable Docker here too
 )
 
 # Streamlit UI
@@ -92,7 +87,7 @@ st.title("📰 Article Analyzer")
 article = st.text_area("Paste the article text here")
 category = st.selectbox("Select the article category", ["PCI", "NI", "PI", "FIF"])
 
-if st.button("Analyze") and article.strip():
+if st.button("Analyze") and article:
     tag_list = hashtags.get(category, [])
     user_message = f"""
 Category: {category}
@@ -101,13 +96,10 @@ Available hashtags: {', '.join(tag_list)}
 Article:
 \"\"\"{article}\"\"\"
 """
-    with st.spinner("Analyzing article, please wait..."):
-        try:
-            result = user_proxy.initiate_chat(
-                recipient=assistant,
-                messages=[{"role": "user", "content": user_message}]
-            )
-            st.subheader("🔍 Extracted Information")
-            st.json(result)
-        except Exception as e:
-            st.error(f"An error occurred during analysis: {e}")
+    with st.spinner("Analyzing..."):
+        result = user_proxy.initiate_chat(
+            recipient=assistant,
+            messages=[{"role": "user", "content": user_message}]
+        )
+        st.subheader("🔍 Extracted Information")
+        st.json(result)

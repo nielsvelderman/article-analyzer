@@ -71,7 +71,8 @@ You are an assistant that:
 2. Selects 3–5 of the most relevant hashtags from the given list based on the article category.
 Return the result as JSON with the keys: people, companies, hashtags.
 """,
-    code_execution_config={"use_docker": False}  # Disable Docker here
+    code_execution_config={"use_docker": False},
+    model="gpt-3.5-turbo"  # <-- specify faster model here
 )
 
 # Define the user proxy agent (also disable Docker)

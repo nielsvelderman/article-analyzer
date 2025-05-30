@@ -5,7 +5,7 @@ from autogen import AssistantAgent, UserProxyAgent
 # Load OpenAI API key securely
 os.environ["OPENAI_API_KEY"] = st.secrets["openai_key"]
 
-# Hashtag options per category (original hashtags you gave)
+# Hashtag options per category (your existing dictionary)
 hashtags = {
     "PCI": [
         "#BusinessNews", "#naturalskincare", "#Partnership", "#naturalcosmetics", "#personalcare",
@@ -62,8 +62,8 @@ hashtags = {
     ]
 }
 
-# Define assistant behavior with Docker disabled
-agent = AssistantAgent(
+# Define the assistant agent (disable Docker if needed)
+assistant = AssistantAgent(
     name="analyzer_agent",
     system_message="""
 You are an assistant that:
@@ -73,6 +73,9 @@ Return the result as JSON with the keys: people, companies, hashtags.
 """,
     code_execution_config={"use_docker": False}  # Disable Docker here
 )
+
+# Define the user proxy agent
+user_proxy = UserProxyAgent(name="user_proxy", human_input_mode="NEVER")
 
 # Streamlit UI
 st.title("📰 Article Analyzer")
@@ -90,7 +93,8 @@ Article:
 \"\"\"{article}\"\"\"
 """
     with st.spinner("Analyzing..."):
-        result = agent.initiate_chat(
+        result = user_proxy.initiate_chat(
+            recipient=assistant,
             messages=[{"role": "user", "content": user_message}]
         )
         st.subheader("🔍 Extracted Information")
